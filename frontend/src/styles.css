@@ -4,3 +4,24 @@
   margin: 0;
   padding: 0;
 }
+
+.canvas {
+  width: calc(100vw - 25px);
+  height: calc(100vh - 25px);
+}
+
+.webcam {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 400px;
+}
+
+#signature-pad {
+  width: 100%;
+}
+
+.canvas canvas {
+  width: 100%;
+  height: calc(100vh - 100px);
+}
