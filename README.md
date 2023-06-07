@@ -1,5 +1,3 @@
 # cv-hand-draw
 ## Запустить проект
-```
-npm run start
-```
+Перейти по ссылке - https://evalyev.github.io/cv-hand-draw/
