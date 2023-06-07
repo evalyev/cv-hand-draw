@@ -25,3 +25,11 @@
   width: 100%;
   height: calc(100vh - 100px);
 }
+
+.canvas-hands {
+  transform: scaleX(-1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
