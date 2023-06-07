@@ -9,6 +9,10 @@ import { Camera } from "@mediapipe/camera_utils"
 
 export default function Canvas(methods) {
   const webcamRef = useRef(null);
+  const [isMouseDown, setIsMouseDown] = useState(false)
+  const [prevCoords, setPrevCoords] = useState({ x: 0, y: 0 })
+  const [currCoords, setCurrCoords] = useState({ x: 0, y: 0 })
+  const [isLoading, setIsLoading] = useState(true)
 
   const canvasHandsDetectionRef = useRef(null);
   const handsDetection = new Hands({
@@ -16,8 +20,10 @@ export default function Canvas(methods) {
       `https://cdn.jsdelivr.net/npm/@mediapipe/hands@${VERSION}/${file}`,
   });
 
-
   const onResultsHandsDetection = (results) => {
+    if (isLoading) {
+      setIsLoading(false)
+    }
     if (results) {
       const currentWebcam = webcamRef.current;
       const canvasCurrent = canvasHandsDetectionRef.current;
@@ -26,17 +32,57 @@ export default function Canvas(methods) {
       canvasCurrent.width = videoWidth;
       canvasCurrent.height = videoHeight;
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const indexFinger = results.multiHandLandmarks[0][8]
+        const clientWidth = canvasCurrent.clientWidth
+        const clientHeight = canvasCurrent.clientHeight
+        setCurrCoords({ x: (1 - indexFinger.x) * clientWidth, y: indexFinger.y * clientHeight })
+
         const ctx = canvasCurrent.getContext("2d");
         for (const landmarks of results.multiHandLandmarks) {
           drawLandmarks(ctx, landmarks, {
             color: '#FF0000',
             fillColor: '#00FF00',
             radius: (data) => {
-              return lerp(data.from?.z, -0.15, 0.1, 10, 1);
+              return lerp(data.from?.z, -0.15, 0.1, 5, 1);
             },
           });
         }
+
+        const event = new MouseEvent('mousedown', {
+          clientX: (1 - indexFinger.x) * clientWidth, // координата X
+          clientY: indexFinger.y * clientHeight // координата Y
+        });
+
+        // Получаем элемент, на который нужно вызвать событие
+        const element = document.querySelector('#signature-pad canvas');
+
+        // Вызываем событие mousedown на элементе с указанными координатами
+        if (!isMouseDown) {
+          element.dispatchEvent(event);
+          setIsMouseDown(true)
+        }
+
+
+        // const eventMove = new MouseEvent('mousemove', {
+        //   'view': window,
+        //   'bubbles': true,
+        //   'cancelable': true,
+        //   'screenX': (1 - indexFinger.x) * clientWidth,
+        //   'screenY': indexFinger.y * clientHeight,
+        //   'clientX': (1 - indexFinger.x) * clientWidth,
+        //   'clientY': indexFinger.y * clientHeight
+        // });
+        // element.dispatchEvent(eventMove);
+        setPrevCoords({ x: (1 - indexFinger.x) * clientWidth, y: indexFinger.y * clientHeight })
+
+
         ctx.restore();
+      }
+      else {
+        const event = new MouseEvent('mouseup')
+        const element = document.querySelector('#signature-pad canvas');
+        element.dispatchEvent(event);
+        setIsMouseDown(false)
       }
     }
   };
@@ -64,15 +110,59 @@ export default function Canvas(methods) {
     }
   }, [webcamRef.current?.video?.readyState]);
 
-  
+
+  useEffect(() => {
+    if (isLoading) {
+      return
+    }
+    var x1 = prevCoords.x;
+    var y1 = prevCoords.y;
+    var x2 = currCoords.x;
+    var y2 = currCoords.y;
+    var frames = 1;
+    const dx = (x2 - x1) / frames;
+    const dy = (y2 - y1) / frames;
+
+    function animate() {
+      x1 += dx;
+      y1 += dy;
+
+      const event = new MouseEvent('mousemove', {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+        screenX: x1,
+        screenY: y1,
+        clientX: x1,
+        clientY: y1
+      });
+
+      const element = document.querySelector('#signature-pad canvas');
+      element.dispatchEvent(event);
+
+      if (frames > 0) {
+        frames--;
+        requestAnimationFrame(animate);
+      }
+    }
+
+    animate();
+  }, [prevCoords])
+
+
   return (
     <div className="canvas">
-      <SignaturePad clearButton="true" />
+      <SignaturePad clearButton="true" options={{
+        minWidth: 0.5,
+        maxWidth: 6,
+      }} />
       <canvas
         className='canvas-hands'
         ref={canvasHandsDetectionRef}
       />
       <Webcam className='webcam' mirrored={true} ref={webcamRef} />
+      {isLoading && (<h2>Подождите, идет загрузка</h2>)}
+      {/* {!isLoading && isLoadingDrawing && (<h2>Помашите рукой для подгрузки доски</h2>)} */}
     </div>
   )
 }
