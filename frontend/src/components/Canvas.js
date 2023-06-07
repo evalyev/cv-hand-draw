@@ -13,6 +13,7 @@ export default function Canvas(methods) {
   const [prevCoords, setPrevCoords] = useState({ x: 0, y: 0 })
   const [currCoords, setCurrCoords] = useState({ x: 0, y: 0 })
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingDrawing, setIsLoadingDrawing] = useState(true)
 
   const canvasHandsDetectionRef = useRef(null);
   const handsDetection = new Hands({
@@ -108,6 +109,8 @@ export default function Canvas(methods) {
       });
       camera.start();
     }
+    const btnElement = document.querySelector('.btn-default')
+    btnElement.textContent = 'Очистить доску'
   }, [webcamRef.current?.video?.readyState]);
 
 
@@ -147,6 +150,8 @@ export default function Canvas(methods) {
     }
 
     animate();
+
+    setIsLoadingDrawing(false)
   }, [prevCoords])
 
 
@@ -162,7 +167,7 @@ export default function Canvas(methods) {
       />
       <Webcam className='webcam' mirrored={true} ref={webcamRef} />
       {isLoading && (<h2>Подождите, идет загрузка</h2>)}
-      {/* {!isLoading && isLoadingDrawing && (<h2>Помашите рукой для подгрузки доски</h2>)} */}
+      {!isLoading && isLoadingDrawing && (<h2>Помашите рукой для подгрузки доски</h2>)}
     </div>
   )
 }
