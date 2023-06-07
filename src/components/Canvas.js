@@ -22,9 +22,7 @@ export default function Canvas(methods) {
   });
 
   const onResultsHandsDetection = (results) => {
-    if (isLoading) {
-      setIsLoading(false)
-    }
+    setIsLoading(false)
     if (results) {
       const currentWebcam = webcamRef.current;
       const canvasCurrent = canvasHandsDetectionRef.current;
@@ -49,40 +47,14 @@ export default function Canvas(methods) {
           });
         }
 
-        const event = new MouseEvent('mousedown', {
-          clientX: (1 - indexFinger.x) * clientWidth, // координата X
-          clientY: indexFinger.y * clientHeight // координата Y
-        });
+        setIsMouseDown(true)
 
-        // Получаем элемент, на который нужно вызвать событие
-        const element = document.querySelector('#signature-pad canvas');
-
-        // Вызываем событие mousedown на элементе с указанными координатами
-        if (!isMouseDown) {
-          element.dispatchEvent(event);
-          setIsMouseDown(true)
-        }
-
-
-        // const eventMove = new MouseEvent('mousemove', {
-        //   'view': window,
-        //   'bubbles': true,
-        //   'cancelable': true,
-        //   'screenX': (1 - indexFinger.x) * clientWidth,
-        //   'screenY': indexFinger.y * clientHeight,
-        //   'clientX': (1 - indexFinger.x) * clientWidth,
-        //   'clientY': indexFinger.y * clientHeight
-        // });
-        // element.dispatchEvent(eventMove);
         setPrevCoords({ x: (1 - indexFinger.x) * clientWidth, y: indexFinger.y * clientHeight })
 
 
         ctx.restore();
       }
       else {
-        const event = new MouseEvent('mouseup')
-        const element = document.querySelector('#signature-pad canvas');
-        element.dispatchEvent(event);
         setIsMouseDown(false)
       }
     }
@@ -109,6 +81,7 @@ export default function Canvas(methods) {
       });
       camera.start();
     }
+
     const btnElement = document.querySelector('.btn-default')
     btnElement.textContent = 'Очистить доску'
   }, [webcamRef.current?.video?.readyState]);
@@ -125,6 +98,7 @@ export default function Canvas(methods) {
     var frames = 1;
     const dx = (x2 - x1) / frames;
     const dy = (y2 - y1) / frames;
+
 
     function animate() {
       x1 += dx;
@@ -152,7 +126,33 @@ export default function Canvas(methods) {
     animate();
 
     setIsLoadingDrawing(false)
-  }, [prevCoords])
+  }, [currCoords])
+
+
+  useEffect(() => {
+    if (isMouseDown) {
+      const event = new MouseEvent('mousedown', {
+        clientX: currCoords.x, // координата X
+        clientY: currCoords.y // координата Y
+      });
+
+      // Получаем элемент, на который нужно вызвать событие
+      const element = document.querySelector('#signature-pad canvas');
+
+      // Вызываем событие mousedown на элементе с указанными координатами
+      element.dispatchEvent(event);
+    }
+    else {
+      const event = new MouseEvent('mouseup', {
+        clientX: currCoords.x, // координата X
+        clientY: currCoords.y // координата Y
+      })
+      const element = document.querySelector('#signature-pad canvas');
+      element.dispatchEvent(event);
+
+    }
+
+  }, [isMouseDown])
 
 
   return (
